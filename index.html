@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lecture Quantra QPlus</title>
+<meta name="description" content="Simulateur pédagogique de lecture du Quantra QPlus après CEC : cas cliniques, patient inconnu avec conduite à tenir, laboratoire et repères.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%238A2B22%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%278%27 fill=%27none%27 stroke=%27white%27 stroke-width=%272.5%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%273%27 fill=%27white%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Mise en page : poste de lecture. Bandeau d'onglets, puis le dossier à gauche et le compte rendu de l'automate à droite. */
+:root{
+  --bg:#FAF8F8; --surface:#FFFFFF; --sunk:#F1ECEB; --line:#DED6D4;
+  --ink:#1F1A19; --ink2:#5A4F4D; --accent:#8A2B22; --accent-soft:#F4E4E1;
+  --band:#DCEBDD; --ok:#2F6B3A; --low:#1F5E8C; --high:#A2421B; --warn-bg:#FFF4DC; --warn:#7A5300;
+  --f-display:"Source Serif 4", Cambria, Georgia, serif;
+  --f-body:"Source Sans 3", Calibri, "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161212; --surface:#1F1A19; --sunk:#2A2322; --line:#3A3231;
+  --ink:#F1ECEB; --ink2:#BFB6B4; --accent:#E07A6E; --accent-soft:#3A2220;
+  --band:#26392A; --ok:#7CC48A; --low:#7DB8E4; --high:#F0956C; --warn-bg:#3A2F16; --warn:#F1C66B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161212; --surface:#1F1A19; --sunk:#2A2322; --line:#3A3231;
+  --ink:#F1ECEB; --ink2:#BFB6B4; --accent:#E07A6E; --accent-soft:#3A2220;
+  --band:#26392A; --ok:#7CC48A; --low:#7DB8E4; --high:#F0956C; --warn-bg:#3A2F16; --warn:#F1C66B; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--accent);padding-bottom:12px}
+h1{font-family:var(--f-display);font-size:clamp(26px,4vw,34px);margin:0;line-height:1.1;text-wrap:balance}
+.sub{color:var(--ink2);margin:4px 0 0;font-size:15px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab{font:600 14px var(--f-body);padding:8px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink2);border-radius:6px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.tab:focus-visible,button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.eyebrow{font:700 12px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0}
+h2{font-family:var(--f-display);font-size:21px;margin:0;line-height:1.2}
+h3{font:700 15px var(--f-body);margin:0}
+p{margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 14px var(--f-mono);min-width:40px;padding:6px 10px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.chip.done::after{content:" ✓";color:var(--ok)}
+.vitals{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
+.vital{background:var(--sunk);border-radius:6px;padding:6px 10px}
+.vital span{display:block;font-size:12px;color:var(--ink2)}
+.vital b{font:700 15px var(--f-mono)}
+/* compte rendu */
+.report{display:flex;flex-direction:column;gap:2px}
+.row{display:grid;grid-template-columns:62px minmax(0,1fr) 92px 70px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.pname{font:700 15px var(--f-mono)}
+.pname small{display:block;font:400 11px var(--f-body);color:var(--ink2)}
+.track{position:relative;height:14px;background:var(--sunk);border-radius:7px}
+.band{position:absolute;top:0;bottom:0;background:var(--band);border-radius:7px}
+.mark{position:absolute;top:-4px;width:4px;height:22px;border-radius:2px;background:var(--ink);transform:translateX(-2px);transition:left .35s ease}
+.val{font:700 17px var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.val small{font:400 11px var(--f-body);color:var(--ink2)}
+.pill{font:700 11px var(--f-body);letter-spacing:.05em;text-transform:uppercase;text-align:center;border-radius:999px;padding:3px 6px;border:1px solid currentColor}
+.pill.n{color:var(--ok)} .pill.l{color:var(--low)} .pill.h{color:var(--high)}
+.derived{font-size:12px;color:var(--ink2)}
+.legend{font-size:12px;color:var(--ink2);display:flex;gap:14px;flex-wrap:wrap}
+.legend i{display:inline-block;width:18px;height:10px;border-radius:5px;background:var(--band);vertical-align:middle;margin-right:4px}
+/* questions */
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:var(--surface)}
+.opt input{margin-top:4px;accent-color:var(--accent)}
+.opt.good{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,var(--surface))}
+.opt.bad{border-color:var(--high);background:color-mix(in srgb,var(--high) 10%,var(--surface))}
+.opt.miss{border-color:var(--ok);border-style:dashed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+button.main{font:700 15px var(--f-body);padding:9px 16px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer}
+button.ghost{font:600 15px var(--f-body);padding:9px 16px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.errs{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:15px}
+.feedback{display:flex;flex-direction:column;gap:10px;border-top:2px solid var(--accent);padding-top:12px}
+.verdict{font:700 16px var(--f-body)}
+.verdict.ok{color:var(--ok)} .verdict.ko{color:var(--high)}
+.note{background:var(--warn-bg);color:var(--warn);border-radius:6px;padding:10px 12px;font-size:14px}
+.note b{color:inherit}
+.muted{color:var(--ink2);font-size:14px}
+/* labo */
+.slider{display:flex;flex-direction:column;gap:4px}
+.slider label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:14px}
+.slider output{font:700 14px var(--f-mono);color:var(--accent)}
+.slider input[type=range]{width:100%;accent-color:var(--accent)}
+.slider .hint{font-size:12px;color:var(--ink2)}
+.toggle{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:600}
+.toggle input{accent-color:var(--accent);width:18px;height:18px}
+.reading li{margin-bottom:4px}
+/* repères */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+td.mono{font-family:var(--f-mono);font-weight:700;white-space:nowrap}
+ul{margin:0;padding-left:20px}
+footer{font-size:12px;color:var(--ink2);border-top:1px solid var(--line);padding-top:10px}
+@media (max-width:480px){.row{grid-template-columns:54px minmax(0,1fr) 78px}.row .pill{grid-column:2 / 4;justify-self:start}}
+@media (prefers-reduced-motion:reduce){.mark{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>Lecture Quantra QPlus</h1>
+    <p class="sub">Atelier de lecture de la cartouche QPlus après CEC · internes de chirurgie cardiaque</p>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-cas" aria-selected="true" data-view="cas">Cas cliniques</button>
+    <button class="tab" role="tab" id="t-inc" aria-selected="false" data-view="inc">Patient inconnu</button>
+    <button class="tab" role="tab" id="t-labo" aria-selected="false" data-view="labo">Laboratoire</button>
+    <button class="tab" role="tab" id="t-rep" aria-selected="false" data-view="rep">Repères</button>
+  </div>
+</header>
+
+<!-- CAS -->
+<section id="v-cas" class="grid">
+  <div class="panel">
+    <p class="eyebrow">Dossier</p>
+    <div class="chips" id="chips"></div>
+    <h2 id="c-title"></h2>
+    <p id="c-story"></p>
+    <div class="vitals" id="c-vitals"></div>
+    <h3>Que montre ce résultat ? <span class="muted">(plusieurs réponses possibles)</span></h3>
+    <div class="opts" id="c-opts"></div>
+    <div class="btns">
+      <button class="main" id="b-check">Vérifier</button>
+      <button class="ghost" id="b-next">Cas suivant</button>
+    </div>
+    <div class="feedback" id="c-fb" hidden></div>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Compte rendu de l'automate</p>
+    <div class="report" id="c-report"></div>
+    <div class="legend"><span><i></i>intervalle de référence (fabricant)</span><span>CTR et PCS sont calculés</span></div>
+  </div>
+</section>
+
+<!-- PATIENT INCONNU -->
+<section id="v-inc" class="grid" hidden>
+  <div class="panel">
+    <p class="eyebrow">Patient inconnu</p>
+    <h2 id="i-title"></h2>
+    <p id="i-story"></p>
+    <div class="vitals" id="i-vitals"></div>
+    <h3>1. Que montre ce résultat ? <span class="muted">(plusieurs réponses possibles)</span></h3>
+    <div class="opts" id="i-opts"></div>
+    <h3>2. Quelle est la première mesure ?</h3>
+    <div class="opts" id="i-dec"></div>
+    <div class="btns">
+      <button class="main" id="i-check">Valider</button>
+      <button class="ghost" id="i-next">Patient suivant</button>
+    </div>
+    <div class="feedback" id="i-fb" hidden></div>
+    <p class="muted" id="i-score">Score : 0 / 0</p>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Compte rendu de l'automate</p>
+    <div class="report" id="i-report"></div>
+    <div class="legend"><span><i></i>intervalle de référence (fabricant)</span><span>CTR et PCS sont calculés</span></div>
+    <p class="muted">Les valeurs changent à chaque patient. La conduite proposée est pédagogique : elle suit la logique du test, pas le protocole transfusionnel du service, qui prime.</p>
+  </div>
+</section>
+
+<!-- LABO -->
+<section id="v-labo" class="grid" hidden>
+  <div class="panel">
+    <p class="eyebrow">Réglez le patient</p>
+    <p class="muted">Modifiez une variable à la fois et regardez quel paramètre bouge. Le modèle est pédagogique : il reproduit les sens de variation, pas des valeurs réelles.</p>
+    <div class="slider"><label for="s-h">Héparine résiduelle <output id="o-h"></output></label><input type="range" id="s-h" min="0" max="0.8" step="0.05" value="0"><span class="hint">activité anti-Xa, UI/mL</span></div>
+    <div class="slider"><label for="s-f">Facteurs de coagulation <output id="o-f"></output></label><input type="range" id="s-f" min="25" max="120" step="5" value="100"><span class="hint">% de la normale (dilution, consommation)</span></div>
+    <div class="slider"><label for="s-fib">Fibrinogène <output id="o-fib"></output></label><input type="range" id="s-fib" min="0.5" max="5" step="0.1" value="2.5"><span class="hint">g/L (Clauss)</span></div>
+    <div class="slider"><label for="s-plt">Plaquettes <output id="o-plt"></output></label><input type="range" id="s-plt" min="20" max="350" step="5" value="200"><span class="hint">G/L</span></div>
+    <div class="slider"><label for="s-t">Température du patient <output id="o-t"></output></label><input type="range" id="s-t" min="32" max="38" step="0.5" value="37"></div>
+    <label class="toggle"><input type="checkbox" id="s-p2y12"> Aspirine ou anti-P2Y12 récent</label>
+    <button class="ghost" id="b-reset">Revenir à un patient normal</button>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Compte rendu de l'automate</p>
+    <div class="report" id="l-report"></div>
+    <h3>Lecture</h3>
+    <ul class="reading" id="l-read"></ul>
+    <div id="l-notes"></div>
+  </div>
+</section>
+
+<!-- REPERES -->
+<section id="v-rep" class="panel" hidden>
+  <p class="eyebrow">Ce que mesure chaque canal</p>
+  <h2>Une cartouche, quatre canaux, six résultats</h2>
+  <p class="muted">Le Quantra mesure la rigidité du caillot par résonance ultrasonore (SEER) dans quatre canaux qui contiennent chacun un réactif différent. Deux résultats sont calculés à partir des autres.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Paramètre</th><th>Canal ou calcul</th><th>Référence</th><th>Ce qu'il reflète</th><th>Piège</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">CT</td><td>Kaolin (voie intrinsèque)</td><td class="mono">104–166 s</td><td>Temps de formation du caillot : facteurs et héparine</td><td>Allongé par l'héparine comme par un déficit en facteurs : à lire avec CTH</td></tr>
+      <tr><td class="mono">CTH</td><td>Kaolin + héparinase</td><td class="mono">103–153 s</td><td>Le même temps, héparine neutralisée : les facteurs seuls</td><td>Un CTH long évoque un déficit en facteurs, pas un effet héparine</td></tr>
+      <tr><td class="mono">CTR</td><td>Calcul CT / CTH</td><td class="mono">&gt; 1,4 : héparine ?</td><td>La part de l'allongement due à l'héparine</td><td>Peu sensible aux faibles taux résiduels ; attendu élevé sous héparine thérapeutique (ECMO)</td></tr>
+      <tr><td class="mono">CS</td><td>Thromboplastine (voie extrinsèque)</td><td class="mono">13,0–33,2 hPa</td><td>Rigidité globale du caillot</td><td>Une CS normale n'exclut pas une anomalie de l'un des deux composants</td></tr>
+      <tr><td class="mono">FCS</td><td>Thromboplastine + abciximab</td><td class="mono">1,0–3,7 hPa</td><td>Rigidité due au réseau de fibrine (plaquettes bloquées par l'anti-GPIIb/IIIa)</td><td>Dépend aussi de la qualité de la polymérisation, pas seulement de la concentration de fibrinogène</td></tr>
+      <tr><td class="mono">PCS</td><td>Calcul CS − FCS</td><td class="mono">11,9–29,8 hPa</td><td>Contribution plaquettaire : nombre et capacité à se lier à la fibrine</td><td>Insensible à l'aspirine et aux anti-P2Y12 ; corrélation seulement modérée avec la numération</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Limites à connaître</h3>
+  <ul>
+    <li><b>Mesure à 37 °C.</b> L'effet de l'hypothermie, de l'acidose et de l'hypocalcémie du patient n'apparaît pas sur le résultat.</li>
+    <li><b>Activation par la thrombine.</b> L'activation forte court-circuite les voies de l'ADP et du thromboxane : une PCS normale n'exclut pas une thrombopathie médicamenteuse.</li>
+    <li><b>Pas de mesure de la fibrinolyse sur la cartouche QPlus.</b> La cartouche QStat, conçue pour le traumatisme, ajoute un paramètre de stabilité du caillot.</li>
+    <li><b>Les intervalles affichés sont ceux du fabricant.</b> Chaque laboratoire doit valider les siens, et les valeurs ne sont pas interchangeables avec le ROTEM (Naik et al., BMC Anesthesiol 2021).</li>
+    <li><b>Un résultat normal chez un patient qui saigne</b> oriente vers une cause chirurgicale, mais ne l'affirme pas : il faut revoir la clinique, la température, le calcium et le traitement antiplaquettaire.</li>
+  </ul>
+</section>
+
+<footer>Outil de formation. Les valeurs des cas proviennent d'un modèle pédagogique simplifié et ne remplacent ni la notice du fabricant, ni le protocole transfusionnel du service. Intervalles de référence : HemoSonics, cartouche QPlus.</footer>
+</div>
+
+<script>
+(function(){
+const P = [
+  {k:"CT",  d:"Kaolin", unit:"s",   min:60,  max:400, lo:104, hi:166, dec:0},
+  {k:"CTH", d:"+ héparinase", unit:"s", min:60, max:400, lo:103, hi:153, dec:0},
+  {k:"CTR", d:"CT / CTH", unit:"",  min:0.8, max:2.6, lo:0.8, hi:1.4, dec:2},
+  {k:"CS",  d:"Global", unit:"hPa", min:0,   max:45,  lo:13.0, hi:33.2, dec:1},
+  {k:"FCS", d:"Fibrine", unit:"hPa",min:0,   max:6,   lo:1.0, hi:3.7, dec:1},
+  {k:"PCS", d:"CS − FCS", unit:"hPa",min:0,  max:42,  lo:11.9, hi:29.8, dec:1}
+];
+// Modèle pédagogique : sens de variation, valeurs indicatives
+function model(h,F,fib,plt){
+  const CTH = 118*Math.pow(100/F,0.6) + (fib<1.2?12:0) + (plt<50?6:0);
+  const CT  = CTH*(1+1.8*h);
+  const FCS = 0.82*fib;
+  const PCS = 24*Math.pow(plt/220,0.75)*Math.pow(Math.min(1,fib/1.5),0.25)*(F<50?0.9:1);
+  return {CT, CTH, CTR:CT/CTH, CS:PCS+FCS, FCS, PCS};
+}
+const fmt = (v,d)=> v.toFixed(d).replace(".",",");
+function status(p,v){ if(p.k==="CTR") return v>p.hi?"h":"n"; return v<p.lo?"l":(v>p.hi?"h":"n"); }
+const SL = {n:"normal", l:"bas", h:"haut"};
+function report(el,r){
+  el.innerHTML = P.map(p=>{
+    const v=r[p.k], s=status(p,v), pos=x=>Math.max(0,Math.min(100,(x-p.min)/(p.max-p.min)*100));
+    const label = p.k==="CTR" && s==="h" ? "> 1,4" : SL[s];
+    return `<div class="row"><div class="pname">${p.k}<small>${p.d}</small></div>
+      <div class="track" aria-hidden="true"><div class="band" style="left:${pos(p.lo)}%;width:${pos(p.hi)-pos(p.lo)}%"></div><div class="mark" style="left:${pos(v)}%"></div></div>
+      <div class="val">${fmt(v,p.dec)} <small>${p.unit}</small></div><div class="pill ${s}">${label}</div></div>`;
+  }).join("");
+}
+function flags(r){ return {
+  hep: r.CTR>1.4, fac: r.CTH>153, fib: r.FCS<1.0, plt: r.PCS<11.9 }; }
+
+const OPTS = [
+  {id:"hep", t:"Effet héparine (CTR > 1,4)"},
+  {id:"fac", t:"Déficit en facteurs de coagulation (CTH allongé)"},
+  {id:"fib", t:"Contribution du fibrinogène insuffisante (FCS basse)"},
+  {id:"plt", t:"Contribution plaquettaire insuffisante (PCS basse)"},
+  {id:"none",t:"Aucune anomalie de l'hémostase mesurable par le test"}
+];
+const CASES = [
+  {t:"Saignement après protamine", m:[0,100,2.6,190],
+   s:"Pontage triple, CEC 85 min. Protamine terminée depuis 20 min. Les drains ont donné 350 mL en 30 min, sang rouge vif qui coagule dans le bocal.",
+   v:[["T°","36,8 °C"],["Ca²⁺ ionisé","1,15 mmol/L"],["pH","7,38"],["Hb","10,2 g/dL"]],
+   mech:"Les six paramètres sont dans les intervalles : la formation du caillot, sa rigidité et les deux composants sont normaux. Un saignement abondant de sang qui coagule, avec une hémostase biologique normale, oriente vers une cause chirurgicale.",
+   trap:"Ne pas transfuser des produits pour « corriger » un test normal. Un résultat normal ne dispense pas de vérifier la température, le calcium et les antiplaquettaires : le test ne les voit pas."},
+  {t:"Deux heures après la protamine", m:[0.35,90,2.4,160],
+   s:"Remplacement valvulaire aortique. Le saignement avait cessé après la protamine. Deux heures plus tard, il reprend à 200 mL/h après la réinjection du sang du récupérateur.",
+   v:[["T°","36,5 °C"],["Ca²⁺ ionisé","1,12 mmol/L"],["Plaquettes","160 G/L"],["Fibrinogène","2,4 g/L"]],
+   mech:"Le CT est long mais le CTH est normal : l'allongement disparaît quand l'héparinase neutralise l'héparine. Le CTR à 1,6 traduit un effet héparine. Mécanismes possibles : rebond d'héparine (libération depuis les tissus et les protéines plasmatiques) ou héparine réinjectée avec le sang du récupérateur mal lavé.",
+   trap:"Comparer CT et CTH avant de conclure. Un CT long avec un CTH long aurait évoqué un déficit en facteurs, qui ne se corrige pas avec de la protamine."},
+  {t:"Dissection aortique", m:[0.05,80,1.0,150],
+   s:"Remplacement de l'aorte ascendante et de la crosse pour dissection de type A, CEC 240 min avec arrêt circulatoire en hypothermie. Saignement diffus en nappe après la protamine.",
+   v:[["T°","35,9 °C"],["Ca²⁺ ionisé","1,05 mmol/L"],["Hb","8,4 g/dL"],["Lactate","3,1 mmol/L"]],
+   mech:"La FCS est basse, alors que la PCS reste dans l'intervalle : le réseau de fibrine est insuffisant. La dissection consomme le fibrinogène, la CEC longue le dilue. La CS globale reste ici dans l'intervalle, d'où l'intérêt de lire FCS et PCS séparément.",
+   trap:"Une CS normale ne suffit pas : c'est la décomposition FCS / PCS qui montre le composant déficitaire. Le temps de coagulation peut rester normal malgré un fibrinogène bas."},
+  {t:"Double remplacement valvulaire", m:[0,85,2.2,55],
+   s:"Remplacement mitral et aortique chez un patient de 74 ans, CEC 190 min. Saignement diffus à 250 mL/h après la protamine, sans lieu de saignement identifié par le chirurgien.",
+   v:[["T°","36,6 °C"],["Ca²⁺ ionisé","1,14 mmol/L"],["Hb","9,0 g/dL"],["pH","7,35"]],
+   mech:"La FCS est normale mais la PCS est basse, et entraîne une CS basse : le défaut porte sur la contribution plaquettaire. La CEC longue réduit le nombre de plaquettes (hémodilution, consommation dans le circuit) et altère leur fonction (activation par les surfaces).",
+   trap:"La PCS reflète le nombre et la capacité des plaquettes à se lier à la fibrine. Sa corrélation avec la numération n'est que modérée : on interprète les deux ensemble."},
+  {t:"Pontage urgent sous ticagrélor", m:[0,95,3.0,210],
+   s:"Syndrome coronarien aigu, pontage urgent. Dernière prise de ticagrélor 20 h avant l'incision, aspirine poursuivie. Saignement diffus à 300 mL/h après la protamine.",
+   v:[["T°","36,7 °C"],["Ca²⁺ ionisé","1,16 mmol/L"],["Plaquettes","210 G/L"],["Fibrinogène","3,0 g/L"]],
+   mech:"Le résultat est normal, y compris la PCS. Ce n'est pas une preuve que les plaquettes fonctionnent : le canal de rigidité est activé par la thrombine, qui active les plaquettes par ses propres récepteurs et court-circuite les voies de l'ADP (P2Y12) et du thromboxane (aspirine).",
+   trap:"Les tests viscoélastiques sont insensibles aux anti-P2Y12 et à l'aspirine. Le contexte (délai depuis la dernière prise) et, si besoin, un test d'agrégation plaquettaire comptent davantage que la PCS."},
+  {t:"Transfusion massive", m:[0,45,1.1,95],
+   s:"Reprise pour tamponnade au retour en réanimation. 9 culots globulaires et 3 L de cristalloïdes en 2 h, sans autre produit. Saignement diffus persistant.",
+   v:[["T°","35,4 °C"],["Ca²⁺ ionisé","0,92 mmol/L"],["Hb","7,6 g/dL"],["pH","7,24"]],
+   mech:"Trois anomalies coexistent : le CTH est long avec un CTR normal (déficit en facteurs, pas d'héparine), la FCS est basse (fibrinogène) et la PCS est basse (plaquettes). C'est le profil de la coagulopathie de dilution : les culots et les cristalloïdes ne contiennent ni facteurs, ni fibrinogène, ni plaquettes.",
+   trap:"Le test est réalisé à 37 °C : l'hypothermie, l'acidose et l'hypocalcémie de ce patient aggravent la coagulopathie in vivo sans apparaître sur le résultat. Il faut les corriger en parallèle."},
+  {t:"Patient sous VA-ECMO", m:[0.4,75,1.9,70],
+   s:"VA-ECMO post-cardiotomie depuis 48 h, héparine en continu avec une cible d'anti-Xa à 0,2–0,3 UI/mL. Dernier anti-Xa à 0,38. Saignement modéré au point de canulation.",
+   v:[["T°","36,9 °C"],["Anti-Xa","0,38 UI/mL"],["Plaquettes","70 G/L"],["Hb","8,8 g/dL"]],
+   mech:"Le CTR élevé traduit l'héparine, ici voulue : ce n'est pas une héparine résiduelle à neutraliser. L'anti-Xa est au-dessus de la cible. La PCS basse est cohérente avec la thrombopénie fréquente sous ECMO (consommation dans le circuit, dilution).",
+   trap:"Le même chiffre ne veut pas dire la même chose selon le contexte. Sous ECMO, la conduite vis-à-vis de l'héparine se décide avec le senior ; une thrombopénie qui s'aggrave doit aussi faire évoquer une thrombopénie induite par l'héparine."},
+  {t:"Retour en réanimation", m:[0,100,2.8,200],
+   s:"Pontage à cœur battant, retour en réanimation. Le patient est froid. Saignement à 180 mL/h, sans anomalie chirurgicale évidente à l'échographie.",
+   v:[["T°","34,2 °C"],["Ca²⁺ ionisé","0,88 mmol/L"],["pH","7,21"],["Lactate","2,8 mmol/L"]],
+   mech:"Le résultat est normal parce que l'automate réchauffe l'échantillon à 37 °C. In vivo, l'hypothermie ralentit les réactions enzymatiques de la coagulation et l'adhésion plaquettaire ; l'acidose et l'hypocalcémie aggravent la coagulopathie.",
+   trap:"Un test viscoélastique normal chez un patient froid, acide et hypocalcémique ne veut pas dire que son hémostase est normale. Réchauffer, corriger le calcium et le pH font partie du traitement du saignement."}
+];
+
+// --- vue Cas ---
+let ci=0; const done=new Set();
+const $=id=>document.getElementById(id);
+function renderChips(){ $("chips").innerHTML = CASES.map((c,i)=>`<button class="chip ${done.has(i)?"done":""}" aria-pressed="${i===ci}" data-i="${i}">${i+1}</button>`).join(""); }
+function loadCase(i){
+  ci=i; const c=CASES[i]; const r=model(...c.m);
+  $("c-title").textContent = `Cas ${i+1}. ${c.t}`;
+  $("c-story").textContent = c.s;
+  $("c-vitals").innerHTML = c.v.map(([a,b])=>`<div class="vital"><span>${a}</span><b>${b}</b></div>`).join("");
+  $("c-opts").innerHTML = OPTS.map(o=>`<label class="opt" id="lab-${o.id}"><input type="checkbox" id="q-${o.id}" value="${o.id}"> <span>${o.t}</span></label>`).join("");
+  $("c-fb").hidden=true; $("c-fb").innerHTML="";
+  report($("c-report"), r); renderChips();
+}
+$("chips").addEventListener("click",e=>{const b=e.target.closest(".chip"); if(b) loadCase(+b.dataset.i);});
+$("b-next").addEventListener("click",()=>loadCase((ci+1)%CASES.length));
+$("b-check").addEventListener("click",()=>{
+  const c=CASES[ci], r=model(...c.m), L=lectureFeedback("",r), ok=L.ok;
+  done.add(ci); renderChips();
+  const fb=$("c-fb"); fb.hidden=false;
+  fb.innerHTML = `<p class="verdict ${ok?"ok":"ko"}">${ok?"Lecture exacte.":"Lecture à revoir : les bonnes réponses sont encadrées en vert."}</p>${L.html}
+    <div><h3>Mécanisme</h3><p>${c.mech}</p></div>
+    <div class="note"><b>Piège.</b> ${c.trap}</div>`;
+});
+
+// --- explication ciblée des erreurs de lecture ---
+const f2=(v,d)=>fmt(v,d);
+function lesAnomalies(r){ const f=flags(r), L=[];
+  if(f.hep) L.push("CTR "+f2(r.CTR,2)); if(f.fac) L.push("CTH "+f2(r.CTH,0)+" s"); if(f.fib) L.push("FCS "+f2(r.FCS,1)+" hPa"); if(f.plt) L.push("PCS "+f2(r.PCS,1)+" hPa");
+  return L.join(", "); }
+function errExpl(id,kind,r){
+  const E={
+    hep:{fp: r.CT>166 ? `Le CT est long (${f2(r.CT,0)} s), mais le CTH l'est presque autant (${f2(r.CTH,0)} s) : l'héparinase ne raccourcit pas le temps, CTR ${f2(r.CTR,2)} ≤ 1,4. L'allongement ne vient pas de l'héparine.` : `CT normal et CTR ${f2(r.CTR,2)} ≤ 1,4 : aucun effet héparine mesurable.`,
+         fn:`CTR ${f2(r.CTR,2)} > 1,4 : le CT (${f2(r.CT,0)} s) se raccourcit nettement quand l'héparinase neutralise l'héparine (CTH ${f2(r.CTH,0)} s). C'est la signature d'un effet héparine.`},
+    fac:{fp:`CTH ${f2(r.CTH,0)} s, dans l'intervalle (≤ 153 s) : une fois l'héparine neutralisée, le caillot se forme à temps. Les facteurs ne sont pas limitants.${r.CT>166?" Le CT long s'explique par l'héparine.":""}`,
+         fn:`CTH ${f2(r.CTH,0)} s > 153 s : même avec l'héparine neutralisée, le caillot se forme lentement. C'est un déficit en facteurs, que la protamine ne corrigera pas.`},
+    fib:{fp:`FCS ${f2(r.FCS,1)} hPa ≥ 1,0 : le réseau de fibrine est suffisant.${r.CS<13?" La CS basse vient de la PCS, pas de la FCS.":""}`,
+         fn:`FCS ${f2(r.FCS,1)} hPa < 1,0 : réseau de fibrine insuffisant${r.CS>=13?", même si la CS globale reste dans l'intervalle : il faut toujours décomposer la CS":""}.`},
+    plt:{fp:`PCS ${f2(r.PCS,1)} hPa ≥ 11,9 : la contribution plaquettaire est suffisante. Attention : la PCS ne voit ni l'aspirine ni les anti-P2Y12.`,
+         fn:`PCS ${f2(r.PCS,1)} hPa < 11,9 (CS − FCS) : la contribution plaquettaire est insuffisante${r.CS<13?", et c'est elle qui fait baisser la CS":""}.`},
+    none:{fp:`Au moins un paramètre est anormal : ${lesAnomalies(r)}.`,
+          fn:`Les six paramètres sont dans les intervalles : conclure « aucune anomalie mesurable » fait partie de la lecture. Cherchez alors ce que le test ne voit pas : cause chirurgicale, température, calcium, antiplaquettaires.`}
+  };
+  return E[id][kind];
+}
+function lectureFeedback(prefix,r){
+  const f=flags(r), truth=new Set(Object.keys(f).filter(k=>f[k])); if(!truth.size) truth.add("none");
+  const errs=[]; let ok=true;
+  OPTS.forEach(o=>{ const el=$(prefix+"lab-"+o.id), on=$(prefix+"q-"+o.id).checked, t=truth.has(o.id);
+    el.classList.remove("good","bad","miss");
+    if(on&&t) el.classList.add("good");
+    else if(on&&!t){ el.classList.add("bad"); ok=false; errs.push(`<li><b>Coché à tort : ${o.t}.</b> ${errExpl(o.id,"fp",r)}</li>`); }
+    else if(!on&&t){ el.classList.add("miss"); ok=false; errs.push(`<li><b>Oublié : ${o.t}.</b> ${errExpl(o.id,"fn",r)}</li>`); }
+  });
+  return {ok, html: errs.length?`<div><h3>Vos erreurs de lecture</h3><ul class="errs">${errs.join("")}</ul></div>`:""};
+}
+
+// --- vue Patient inconnu ---
+const DEC=[
+  {id:"prot",t:"Complément de protamine"},
+  {id:"fac", t:"Apport de facteurs (CCP ou plasma)"},
+  {id:"fib", t:"Concentré de fibrinogène"},
+  {id:"plt", t:"Transfusion de plaquettes"},
+  {id:"phys",t:"Réchauffer, corriger le calcium et le pH"},
+  {id:"chir",t:"Rechercher une cause chirurgicale, sans produit sanguin"}];
+const RND=(a,b)=>a+Math.random()*(b-a), PICK=a=>a[Math.floor(Math.random()*a.length)];
+const TYPES={
+  chir:{m:()=>[0,RND(90,110),RND(2.3,3.2),RND(160,260)], s:"Les drains donnent du sang rouge vif qui coagule dans le bocal."},
+  prot:{m:()=>[RND(.3,.5),RND(90,110),RND(2.2,3),RND(160,240)], s:PICK(["Le saignement avait cessé après la protamine, puis reprend après la réinjection du sang du récupérateur.","Saignement diffus en nappe qui reprend une heure après la protamine."])},
+  fac:{m:()=>[0,RND(35,45),RND(2.1,2.8),RND(150,220)], s:"Saignement diffus en nappe après une CEC longue, chez un patient sous AVK arrêté tardivement."},
+  fib:{m:()=>[0,RND(80,100),RND(.7,1.05),RND(150,230)], s:"Saignement diffus en nappe après une CEC longue."},
+  plt:{m:()=>[0,RND(85,105),RND(2.2,3),RND(35,60)], s:"Saignement diffus en nappe après une CEC de plus de trois heures."},
+  phys:{m:()=>[0,RND(90,110),RND(2.4,3.2),RND(160,240)], s:"Retour en réanimation après la protamine. Le patient est froid. Saignement diffus, sans anomalie chirurgicale évidente à l'échographie."}};
+const DEC_OK={
+  prot:"Effet héparine isolé (CTR > 1,4, CTH normal) : complément de protamine à faible dose. Vérifiez d'abord que le prélèvement n'a pas été fait sur une voie héparinée.",
+  fac:"CTH allongé sans effet héparine, fibrine et plaquettes correctes : le déficit porte sur les facteurs. Apport de facteurs (CCP ou plasma) selon le protocole du service.",
+  fib:"FCS basse avec PCS correcte : le réseau de fibrine est le maillon faible. Le concentré de fibrinogène (ou le cryoprécipité) corrige directement ce défaut.",
+  plt:"PCS basse avec FCS correcte : la contribution plaquettaire est insuffisante. Transfusion de plaquettes, à interpréter avec la numération.",
+  phys:"Le test est normal parce que l'automate mesure à 37 °C. Chez ce patient froid, hypocalcémique et acide, ce sont ces conditions qui altèrent l'hémostase in vivo : on les corrige avant tout produit.",
+  chir:"Hémostase biologique normale, conditions physiologiques correctes, sang qui coagule : la cause est probablement chirurgicale. On ne corrige pas un test normal avec des produits ; la reprise se discute avec le chirurgien."};
+function decWrong(c,r,k){
+  return {
+    prot:`La protamine ne se justifie que si le CTR dépasse 1,4 ; ici, CTR ${f2(r.CTR,2)}. En excès, la protamine a elle-même un effet anticoagulant et antiplaquettaire.`,
+    fac:`CTH ${f2(r.CTH,0)} s, normal : les facteurs ne sont pas limitants. Le plasma apporterait surtout du volume.`,
+    fib:`FCS ${f2(r.FCS,1)} hPa, normale : le fibrinogène n'est pas le maillon faible.`,
+    plt:`PCS ${f2(r.PCS,1)} hPa, normale : la contribution plaquettaire est suffisante (sous réserve des antiplaquettaires, que le test ne voit pas).`,
+    phys: k==="phys"?"":"La température, le calcium et le pH sont corrects chez ce patient : ce n'est pas l'explication du saignement.",
+    chir:`Le test montre une anomalie mesurable (${lesAnomalies(r)||"conditions physiologiques altérées"}) : on la corrige d'abord. Une cause chirurgicale reste possible et se discute en parallèle.`}[c];
+}
+const inc={k:null,r:null,n:0,ok:0,done:false};
+function newInc(){
+  let k,r; do{ k=PICK(Object.keys(TYPES).filter(x=>x!==inc.k)); r=model(...TYPES[k].m());
+    const f=flags(r), on=Object.keys(f).filter(x=>f[x]);
+    var good = (k==="chir"||k==="phys") ? on.length===0 : (on.length===1 && on[0]===({prot:"hep",fac:"fac",fib:"fib",plt:"plt"})[k]);
+  } while(!good);
+  inc.k=k; inc.r=r; inc.done=false;
+  const cold=k==="phys";
+  $("i-title").textContent=PICK(["Pontage coronaire","Remplacement valvulaire aortique","Plastie mitrale","Remplacement de l'aorte ascendante","Double remplacement valvulaire"])+", CEC "+Math.round(RND(80,200))+" min";
+  $("i-story").textContent=TYPES[k].s+" Drains : "+Math.round(RND(150,350)/10)*10+" mL/h.";
+  const V=cold?[["T°",f2(RND(33.8,34.6),1)+" °C"],["Ca²⁺ ionisé",f2(RND(.84,.92),2)+" mmol/L"],["pH",f2(RND(7.19,7.25),2)],["Hb",f2(RND(8.5,9.8),1)+" g/dL"]]
+             :[["T°",f2(RND(36.4,37),1)+" °C"],["Ca²⁺ ionisé",f2(RND(1.1,1.22),2)+" mmol/L"],["pH",f2(RND(7.35,7.42),2)],["Hb",f2(RND(8.5,10.5),1)+" g/dL"]];
+  $("i-vitals").innerHTML=V.map(([a,b])=>`<div class="vital"><span>${a}</span><b>${b}</b></div>`).join("");
+  $("i-opts").innerHTML=OPTS.map(o=>`<label class="opt" id="i-lab-${o.id}"><input type="checkbox" id="i-q-${o.id}" value="${o.id}"> <span>${o.t}</span></label>`).join("");
+  $("i-dec").innerHTML=DEC.map(o=>`<label class="opt" id="i-d-${o.id}"><input type="radio" name="idec" value="${o.id}"> <span>${o.t}</span></label>`).join("");
+  $("i-fb").hidden=true; $("i-fb").innerHTML=""; report($("i-report"),r);
+}
+$("i-next").addEventListener("click",newInc);
+$("i-check").addEventListener("click",()=>{
+  if(inc.done) return;
+  const sel=document.querySelector('input[name="idec"]:checked');
+  if(!sel){ $("i-fb").hidden=false; $("i-fb").innerHTML='<p class="verdict ko">Choisissez aussi une première mesure.</p>'; return; }
+  inc.done=true; const r=inc.r, k=inc.k, c=sel.value, L=lectureFeedback("i-",r), dok=c===k;
+  $("i-d-"+k).classList.add("good"); if(!dok) $("i-d-"+c).classList.add("bad");
+  inc.n++; if(L.ok&&dok) inc.ok++;
+  $("i-fb").hidden=false;
+  $("i-fb").innerHTML=`<p class="verdict ${L.ok&&dok?"ok":"ko"}">${L.ok?"Lecture exacte":"Lecture à revoir"} · ${dok?"conduite adaptée":"conduite à revoir"}.</p>`+L.html+
+    (dok?"":`<div><h3>Votre choix : ${DEC.find(x=>x.id===c).t.toLowerCase()}</h3><p>${decWrong(c,r,k)}</p></div>`)+
+    `<div class="note"><b>Conduite attendue : ${DEC.find(x=>x.id===k).t.toLowerCase()}.</b> ${DEC_OK[k]}</div>`;
+  $("i-score").textContent=`Score : ${inc.ok} / ${inc.n} (lecture et conduite justes)`;
+});
+
+// --- vue Labo ---
+const S={h:$("s-h"),f:$("s-f"),fib:$("s-fib"),plt:$("s-plt"),t:$("s-t"),p:$("s-p2y12")};
+function labo(){
+  const h=+S.h.value,F=+S.f.value,fib=+S.fib.value,plt=+S.plt.value,T=+S.t.value;
+  $("o-h").textContent=fmt(h,2); $("o-f").textContent=F+" %"; $("o-fib").textContent=fmt(fib,1)+" g/L"; $("o-plt").textContent=plt+" G/L"; $("o-t").textContent=fmt(T,1)+" °C";
+  const r=model(h,F,fib,plt); report($("l-report"),r); const f=flags(r); const L=[];
+  if(f.hep) L.push("CT long et CTH normal ou moins allongé : CTR "+fmt(r.CTR,2)+", effet héparine.");
+  else if(h>0) L.push("De l'héparine est présente mais le CTR reste sous 1,4 : le test est peu sensible aux faibles taux.");
+  if(f.fac) L.push("CTH allongé : déficit en facteurs, que l'héparinase ne corrige pas.");
+  if(f.fib) L.push("FCS basse : réseau de fibrine insuffisant.");
+  if(f.plt) L.push("PCS basse : contribution plaquettaire insuffisante.");
+  if(r.CS<13) L.push("CS basse : la rigidité globale du caillot est diminuée.");
+  if(!L.length) L.push("Profil dans les intervalles de référence.");
+  $("l-read").innerHTML=L.map(x=>`<li>${x}</li>`).join("");
+  const N=[];
+  if(T<36) N.push("<b>Hypothermie.</b> Le résultat ne change pas : l'automate mesure à 37 °C. L'effet du froid sur l'hémostase du patient reste invisible.");
+  if(S.p.checked) N.push("<b>Antiplaquettaires.</b> La PCS ne change pas : l'activation par la thrombine court-circuite les voies inhibées par l'aspirine et les anti-P2Y12.");
+  $("l-notes").innerHTML=N.map(x=>`<div class="note">${x}</div>`).join("");
+}
+Object.values(S).forEach(el=>el.addEventListener("input",labo));
+$("b-reset").addEventListener("click",()=>{S.h.value=0;S.f.value=100;S.fib.value=2.5;S.plt.value=200;S.t.value=37;S.p.checked=false;labo();});
+
+// --- onglets ---
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));
+  ["cas","inc","labo","rep"].forEach(v=>$("v-"+v).hidden = v!==t.dataset.view);
+}));
+loadCase(0); labo(); newInc();
+})();
+</script>
+</body>
+</html>
